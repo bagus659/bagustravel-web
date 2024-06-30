@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Formulir Reservasi Wisata Indonesia</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom, #001f4d, #003366);
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 800px;
+        background: linear-gradient(to right, #3498db, #2c3e50);
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        text-align: center;
+        color: white;
+        margin-bottom: 20px;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: white;
+      }
+
+      input,
+      select {
+        width: calc(100% - 16px);
+        padding: 10px;
+        font-size: 16px;
+        border: none;
+        border-radius: 4px;
+        background-color: #ddd;
+      }
+
+      button {
+        background-color: #4caf50;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        width: 100%;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+
+      #reservationTable {
+        margin-top: 20px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      table,
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+
+      .action-column {
+        width: 120px;
+      }
+
+      .form-edit {
+        display: none;
+        margin-top: 20px;
+        padding: 20px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Formulir Reservasi Wisata Indonesia</h1>
+
+      <form id="reservationForm">
+        <div class="form-group">
+          <label for="name">Nama:</label>
+          <input type="text" id="name" name="name" required />
+        </div>
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" required />
+        </div>
+        <div class="form-group">
+          <label for="tour">Paket Wisata:</label>
+          <select id="tour" name="tour" required>
+            <option value="Bali">Bali</option>
+            <option value="Yogyakarta">Yogyakarta</option>
+            <option value="Raja Ampat">Raja Ampat</option>
+            <option value="Bromo">Gunung Bromo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="date">Tanggal:</label>
+          <input type="date" id="date" name="date" required />
+        </div>
+        <button style="background-color: navy" type="submit">Submit</button>
+      </form>
+
+      <div id="reservationTable"></div>
+
+      <div id="editForm" class="form-edit">
+        <h2>Edit Reservation</h2>
+        <form id="editReservationForm">
+          <input type="hidden" id="editIndex" />
+          <div class="form-group">
+            <label for="editName">Nama:</label>
+            <input type="text" id="editName" name="editName" required />
+          </div>
+          <div class="form-group">
+            <label for="editEmail">Email:</label>
+            <input type="email" id="editEmail" name="editEmail" required />
+          </div>
+          <div class="form-group">
+            <label for="editTour">Paket Wisata:</label>
+            <select id="editTour" name="editTour" required>
+              <option value="Bali">Bali</option>
+              <option value="Yogyakarta">Yogyakarta</option>
+              <option value="Raja Ampat">Raja Ampat</option>
+              <option value="Bromo">Gunung Bromo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editDate">Tanggal:</label>
+            <input type="date" id="editDate" name="editDate" required />
+          </div>
+          <button style="background-color: navy" type="submit">Update</button>
+          <button type="button" onclick="cancelEdit()">Cancel</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("reservationForm");
+      const tableContainer = document.getElementById("reservationTable");
+      const editForm = document.getElementById("editForm");
+      const editReservationForm = document.getElementById("editReservationForm");
+
+      // Load existing reservations from local storage on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        const reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+        renderTable(reservations);
+      });
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+        const tour = document.getElementById("tour").value;
+        const date = document.getElementById("date").value;
+
+        // Create reservation object
+        const reservation = { name, email, tour, date };
+
+        // Get existing reservations from local storage
+        let reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+
+        // Add new reservation to the array
+        reservations.push(reservation);
+
+        // Save updated reservations to local storage
+        localStorage.setItem("reservations", JSON.stringify(reservations));
+
+        // Render the table with updated data
+        renderTable(reservations);
+
+        // Clear form fields after submission
+        form.reset();
+      });
+
+      function renderTable(reservations) {
+        // Create table header
+        const table = `
+        <table>
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Paket Wisata</th>
+              <th>Tanggal</th>
+              <th class="action-column">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${reservations
+              .map(
+                (reservation, index) => `
+              <tr>
+                <td>${reservation.name}</td>
+                <td>${reservation.email}</td>
+                <td>${reservation.tour}</td>
+                <td>${reservation.date}</td>
+                <td class="action-column">
+                  <button onclick="editReservation(${index})">Update</button>
+                  <button onclick="deleteReservation(${index})">Delete</button>
+                </td>
+              </tr>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      `;
+
+        // Update table container with the new table
+        tableContainer.innerHTML = table;
+      }
+
+      function editReservation(index) {
+        // Retrieve reservations from localStorage
+        let reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+
+        // Populate edit form with selected reservation data
+        const selectedReservation = reservations[index];
+        document.getElementById("editIndex").value = index;
+        document.getElementById("editName").value = selectedReservation.name;
+        document.getElementById("editEmail").value = selectedReservation.email;
+        document.getElementById("editTour").value = selectedReservation.tour;
+        document.getElementById("editDate").value = selectedReservation.date;
+
+        // Show edit form
+        editForm.style.display = "block";
+      }
+
+      editReservationForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        // Retrieve reservations from localStorage
+        let reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+
+        // Get updated reservation data from form
+        const editIndex = document.getElementById("editIndex").value;
+        reservations[editIndex].name = document.getElementById("editName").value;
+        reservations[editIndex].email = document.getElementById("editEmail").value;
+        reservations[editIndex].tour = document.getElementById("editTour").value;
+        reservations[editIndex].date = document.getElementById("editDate").value;
+
+        // Save updated reservations to localStorage
+        localStorage.setItem("reservations", JSON.stringify(reservations));
+
+        // Re-render the table
+        renderTable(reservations);
+
+        // Hide edit form
+        editForm.style.display = "none";
+      });
+
+      function cancelEdit() {
+        // Hide edit form
+        editForm.style.display = "none";
+      }
+
+      function deleteReservation(index) {
+        // Retrieve reservations from localStorage
+        let reservations = JSON.parse(localStorage.getItem("reservations")) || [];
+
+        // Remove reservation at index
+        reservations.splice(index, 1);
+
+        // Save updated reservations to localStorage
+        localStorage.setItem("reservations", JSON.stringify(reservations));
+
+        // Re-render the table
+        renderTable(reservations);
+      }
+    </script>
+  </body>
+</html>
